@@ -3,3 +3,4 @@
 .streamlit
 .idea
 *.pyc
+.DS_Store

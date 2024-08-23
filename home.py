@@ -16,15 +16,26 @@ if "chat_history" not in st.session_state:
     st.session_state.chat_history = [
         AIMessage(content="Hello, I am Max, your personal tour guide. Tell me an attraction to start the tour.")
     ]
+if "current_attraction" not in st.session_state:
+    st.session_state.current_attraction = ""
 
-# Gets user input
+# Get user input and generate response
 user_input = st.chat_input("Type your message here...")
 
 # Validates user input
 # If user input is valid, invokes methods to get response. Otherwise, does nothing.
 if user_input and user_input != "":
-    keyword = classify_input(user_input, st.session_state.chat_history)
-    response = get_response(user_input, keyword)
+    result = classify_input(user_input, st.session_state.chat_history)
+    # Checks if the user changes his/her destination
+    # If he/she does, update st.session_state.current_attraction
+    # Otherwise, update user_input by adding the value of st.session_state.current_attraction
+    if result == "Attraction":
+        st.session_state.current_attraction = user_input
+    else:
+        user_input = st.session_state.current_attraction + " " + user_input
+    # Gets a response
+    response = get_response(user_input, result)
+    # Updates chat history
     st.session_state.chat_history.append(HumanMessage(content=user_input))
     st.session_state.chat_history.append(AIMessage(content=response))
 
