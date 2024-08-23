@@ -14,6 +14,7 @@ from langchain_community.utilities import SerpAPIWrapper
 from langchain_core.tools import StructuredTool
 from constants import ATTRACTION_SYSTEM_MESSAGE
 from constants import OTHER_SYSTEM_MESSAGE
+from constants import BUILDING_SYSTEM_MESSAGE
 
 
 def set_api_key(keyword: str):
@@ -29,6 +30,7 @@ set_api_key("SERPAPI_API_KEY")
 # Defines system messages for each keyword
 msg_dict = {
     "Attraction": ATTRACTION_SYSTEM_MESSAGE,
+    "Building": BUILDING_SYSTEM_MESSAGE,
     "Other": OTHER_SYSTEM_MESSAGE
 }
 
@@ -50,8 +52,14 @@ def classify_input(user_input: str, chat_history: list) -> str:
         ("system", "Given a chat history and the latest user input "
                    "which might reference context in the chat history, "
                    "Classify the latest user input into the following groups: "
-                   "'Attraction' and 'Other' by the below rules."
-                   "If the latest user input is the very first famous attraction"
+                   "'Attraction' "
+                   "'Building' "
+                   "and 'Other' "
+                   "by the below rules."
+                   "If the latest user input is a building in the last attraction "
+                   "mentioned in the chat history, "
+                   "then return 'Building'."
+                   "Else If the latest user input is the very first famous attraction"
                    "mentioned in the chat history "
                    "or it is a new attraction that was not in the same location "
                    "as the last attraction mentioned in the chat history, "
@@ -68,6 +76,11 @@ def classify_input(user_input: str, chat_history: list) -> str:
                    "[User]: Forbidden city"
                    "EXAMPLE OUTPUT"
                    "Attraction"
+                   "EXAMPLE CONVERSATION"
+                   "[User]: Qingjing Mosque"
+                   "[User]: the Mingshan Hall"
+                   "EXAMPLE OUTPUT"
+                   "Building"
                    "EXAMPLE CONVERSATION"
                    "[User]: Qingjing Mosque"
                    "[User]: the Mingshan Hall"
