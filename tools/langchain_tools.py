@@ -7,11 +7,16 @@ Methods:
 
 import os
 import streamlit as st
+from langchain_community.document_loaders import WebBaseLoader
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.agents import create_openai_functions_agent, AgentExecutor
 from langchain_community.utilities import SerpAPIWrapper
-from langchain_core.tools import StructuredTool
+from langchain_core.tools import StructuredTool, create_retriever_tool, Tool
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_openai import OpenAIEmbeddings
+from langchain_community.vectorstores.faiss import FAISS
+
 from constants import ATTRACTION_SYSTEM_MESSAGE
 from constants import OTHER_SYSTEM_MESSAGE
 from constants import BUILDING_SYSTEM_MESSAGE
@@ -26,6 +31,7 @@ def set_api_key(keyword: str):
 # Sets API keys
 set_api_key("OPENAI_API_KEY")
 set_api_key("SERPAPI_API_KEY")
+
 
 # Defines system messages for each keyword
 msg_dict = {
@@ -102,7 +108,55 @@ def classify_input(user_input: str, chat_history: list) -> str:
     # Prints the result in terminal
     print("-----Get response-----")
     print(response.content)
+
     return response.content
+
+
+def get_retriever_tools(user_input: str) -> list:
+    """Instantiates and returns a retriever tool
+    Args:
+        - user_input: The user input from the input field.
+    Returns:
+        - retriever_tool: Tool class to pass to an agent
+    """
+    # loads text data into Document objects
+    base_urls = ["https://baike.baidu.com/item/"]
+    retriever_tools = []
+    for base_url in base_urls:
+        url = base_url + user_input
+        loader = WebBaseLoader(url)
+        docs = loader.load()
+
+        # Splits Documents to avoid exceeding token limit
+        """How to determine chunk_size
+        chunk size = input token limit/the number of retrieved documents
+        1. GPT-3.5-turbo token limit(input+output) is 4096.
+        2. The number of retrieved documents returned by 
+        vector_store.as_retriever() is 5.
+        """
+        splitter = RecursiveCharacterTextSplitter(
+            chunk_size=400,
+            chunk_overlap=20
+        )
+        split_docs = splitter.split_documents(docs)
+
+        # Instantiates an in-memory vector store
+        embedding = OpenAIEmbeddings()
+        vector_store = FAISS.from_documents(split_docs, embedding=embedding)
+
+        # Creates a retriever
+        retriever = vector_store.as_retriever()
+
+        # Creates a retriever tool
+        retriever_tool = create_retriever_tool(
+            retriever,
+            "baidu_baike_retriever",
+            "Searches and returns excerpts from specific baidu baike webpage.",
+        )
+
+        retriever_tools.append(retriever_tool)
+
+    return retriever_tools
 
 
 def get_response(user_input: str, keyword: str) -> str:
@@ -136,8 +190,11 @@ def get_response(user_input: str, keyword: str) -> str:
                     "Input to this tool must be a SINGLE STRING",
         func=search.run,
     )
-    # Creates a toolset
+    # Get the retriever tool
+    retriever_tools = get_retriever_tools(user_input)
+    # Creates a tools
     tools = [repl_tool]
+    tools.extend(retriever_tools)
     # Instantiates an agent
     agent = create_openai_functions_agent(
         llm=llm,

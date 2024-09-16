@@ -3,3 +3,5 @@ langchain
 langchain-openai
 langchain-community
 google-search-results
+bs4
+faiss-cpu
