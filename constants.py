@@ -81,4 +81,18 @@ BUILDING_SYSTEM_MESSAGE = (
     "symbolizing the infinite cosmic space."
 )
 
+SCENERY_SYSTEM_MESSAGE = (
+    "Given the input, "
+    "generate a search query to write an INTRODUCTION."
+    "The INTRODUCTION should be playful and interactive."
+    "The INTRODUCTION must follow the below rules."
+    "Introduce the following topics: "
+    "explanation of the name, "
+    "main characteristic, "
+    "legend story."
+    "In the introduction, "
+    "use verbs like 'look up' 'touch' and 'feel' "
+    "to interact with the user."
+)
+
 OTHER_SYSTEM_MESSAGE = "Given the input, generate a search query to search result."
